@@ -1,7 +1,5 @@
 import glfw
 
-from copy import deepcopy
-
 import magic
 import Util as lu
 import math
@@ -13,6 +11,9 @@ from ObjModel import ObjModel
 
 WIDTH, HEIGHT = 500, 700
 WINDOW_TITLE = 'Chess'
+# this is just a constant that was found through trial and error
+# to find what height to draw the pieces at
+BOARD_HEIGHT = 0.46
 
 g_boardModel = None
 g_whitePawnModels = None
@@ -23,17 +24,20 @@ g_whiteQueenModel = None
 g_blackQueenModel = None
 g_whiteBishopModels = None
 g_blackBishopModels = None
+g_whiteKnightModels = None
+g_blackKnightModels = None
 g_whiteRookModels = None
 g_blackRookModels = None
 
 g_worldSpaceLightDirection = [-1, -1, -1]
-g_cameraDistance = 40.0
-g_cameraYaw = 45.0
-g_cameraPitch = 40.0
-g_lookTargetHeight = 6.0
+g_cameraDistance = 15.0
+g_cameraYaw = 270.0
+g_cameraPitch = 45.0
+g_lookTargetHeight = 0.0
 
 def renderFrame(width, height):
   global g_boardModel
+  global g_whitePawnModels
   global g_blackPawnModels
   global g_whiteKingModel
   global g_blackKingModel
@@ -41,6 +45,8 @@ def renderFrame(width, height):
   global g_blackQueenModel
   global g_whiteBishopModels
   global g_blackBishopModels
+  global g_whiteKnightModels
+  global g_blackKnightModels
   global g_whiteRookModels
   global g_blackRookModels
 
@@ -68,38 +74,50 @@ def renderFrame(width, height):
   boardModelToWorldTransform = lu.Mat4()
   drawObjModel(viewToClipTfm, worldToViewTfm, boardModelToWorldTransform, g_boardModel)
 
-  whiteKingModelToWorldTransform = lu.make_translation(3.5, 0.46, -0.5)
-  #drawObjModel(viewToClipTfm, worldToViewTfm, whiteKingModelToWorldTransform, g_whiteKingModel)
+  whiteKingModelToWorldTransform = lu.make_translation(3.5, BOARD_HEIGHT, -0.5)
+  drawObjModel(viewToClipTfm, worldToViewTfm, whiteKingModelToWorldTransform, g_whiteKingModel)
 
-  blackKingModelToWorldTransform = lu.make_translation(-3.5, 0.46, -0.5)
+  blackKingModelToWorldTransform = lu.make_translation(-3.5, BOARD_HEIGHT, -0.5)
   drawObjModel(viewToClipTfm, worldToViewTfm, blackKingModelToWorldTransform, g_blackKingModel)
 
-  whiteQueenModelToWorldTransform = lu.make_translation(3.5, 0.46, 0.5)
-  #drawObjModel(viewToClipTfm, worldToViewTfm, whiteQueenModelToWorldTransform, g_whiteQueenModel)
+  whiteQueenModelToWorldTransform = lu.make_translation(3.5, BOARD_HEIGHT, 0.5)
+  drawObjModel(viewToClipTfm, worldToViewTfm, whiteQueenModelToWorldTransform, g_whiteQueenModel)
 
-  blackQueenModelToWorldTransform = lu.make_translation(-3.5, 0.46, 0.5)
+  blackQueenModelToWorldTransform = lu.make_translation(-3.5, BOARD_HEIGHT, 0.5)
   drawObjModel(viewToClipTfm, worldToViewTfm, blackQueenModelToWorldTransform, g_blackQueenModel)
 
+  whitePawnModelToWorldTransforms = []
   blackPawnModelToWorldTransforms = []
   for i in range(8):
-    blackPawnModelToWorldTransforms.append(lu.make_translation(-2.5, 0.46, -3.5+1*i))
+    whitePawnModelToWorldTransforms.append(lu.make_translation(2.5, BOARD_HEIGHT, -3.5+1*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, whitePawnModelToWorldTransforms[i], g_whitePawnModels[i])
+
+    blackPawnModelToWorldTransforms.append(lu.make_translation(-2.5, BOARD_HEIGHT, -3.5+1*i))
     drawObjModel(viewToClipTfm, worldToViewTfm, blackPawnModelToWorldTransforms[i], g_blackPawnModels[i])
 
   whiteBishopModelToWorldTransforms = []
   blackBishopModelToWorldTransforms = []
+  whiteKnightModelToWorldTransforms = []
+  blackKnightModelToWorldTransforms = []
   whiteRookModelToWorldTransforms = []
   blackRookModelToWorldTransforms = []
   for i in range(-1, 2, 2):
-    whiteBishopModelToWorldTransforms.append(lu.make_translation(3.5, 0.46, 1.5*i))
-    #drawObjModel(viewToClipTfm, worldToViewTfm, whiteBishopModelToWorldTransforms[i], g_whiteBishopModels[i])
+    whiteBishopModelToWorldTransforms.append(lu.make_translation(3.5, BOARD_HEIGHT, 1.5*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, whiteBishopModelToWorldTransforms[i], g_whiteBishopModels[i])
 
-    blackBishopModelToWorldTransforms.append(lu.make_translation(-3.5, 0.46, 1.5*i))
+    blackBishopModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 1.5*i))
     drawObjModel(viewToClipTfm, worldToViewTfm, blackBishopModelToWorldTransforms[i], g_blackBishopModels[i])
 
-    whiteRookModelToWorldTransforms.append(lu.make_translation(3.5, 0.46, 3.5*i))
-    #drawObjModel(viewToClipTfm, worldToViewTfm, whiteRookModelToWorldTransforms[i], g_whiteRookModels[i])
+    whiteKnightModelToWorldTransforms.append(lu.make_translation(3.5, BOARD_HEIGHT, 2.5*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, whiteKnightModelToWorldTransforms[i], g_whiteKnightModels[i])
 
-    blackRookModelToWorldTransforms.append(lu.make_translation(-3.5, 0.46, 3.5*i))
+    blackKnightModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 2.5*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, blackKnightModelToWorldTransforms[i], g_blackKnightModels[i])
+
+    whiteRookModelToWorldTransforms.append(lu.make_translation(3.5, BOARD_HEIGHT, 3.5*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, whiteRookModelToWorldTransforms[i], g_whiteRookModels[i])
+
+    blackRookModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 3.5*i))
     drawObjModel(viewToClipTfm, worldToViewTfm, blackRookModelToWorldTransforms[i], g_blackRookModels[i])
 
 def drawUi():
@@ -117,6 +135,7 @@ def drawUi():
 
 def initResources():
   global g_boardModel
+  global g_whitePawnModels
   global g_blackPawnModels
   global g_whiteKingModel
   global g_blackKingModel
@@ -124,6 +143,8 @@ def initResources():
   global g_blackQueenModel
   global g_whiteBishopModels
   global g_blackBishopModels
+  global g_whiteKnightModels
+  global g_blackKnightModels
   global g_whiteRookModels
   global g_blackRookModels
 
@@ -133,17 +154,23 @@ def initResources():
   g_whiteQueenModel = ObjModel('model/whiteQueen.obj')
   g_blackQueenModel = ObjModel('model/blackQueen.obj')
 
+  g_whitePawnModels = []
   g_blackPawnModels = []
   for i in range(8):
+    g_whitePawnModels.append(ObjModel('model/whitePawn.obj'))
     g_blackPawnModels.append(ObjModel('model/blackPawn.obj'))
 
   g_whiteBishopModels = []
   g_blackBishopModels = []
+  g_whiteKnightModels = []
+  g_blackKnightModels = []
   g_whiteRookModels = []
   g_blackRookModels = []
   for i in range(2):
     g_whiteBishopModels.append(ObjModel('model/whiteBishop.obj'))
     g_blackBishopModels.append(ObjModel('model/blackBishop.obj'))
+    g_whiteKnightModels.append(ObjModel('model/whiteKnight.obj'))
+    g_blackKnightModels.append(ObjModel('model/blackKnight.obj'))
     g_whiteRookModels.append(ObjModel('model/whiteRook.obj'))
     g_blackRookModels.append(ObjModel('model/blackRook.obj'))
 
