@@ -15,10 +15,16 @@ WIDTH, HEIGHT = 500, 700
 WINDOW_TITLE = 'Chess'
 
 g_boardModel = None
+g_whitePawnModels = None
+g_blackPawnModels = None
 g_whiteKingModel = None
 g_blackKingModel = None
 g_whiteQueenModel = None
 g_blackQueenModel = None
+g_whiteBishopModels = None
+g_blackBishopModels = None
+g_whiteRookModels = None
+g_blackRookModels = None
 
 g_worldSpaceLightDirection = [-1, -1, -1]
 g_cameraDistance = 40.0
@@ -28,10 +34,15 @@ g_lookTargetHeight = 6.0
 
 def renderFrame(width, height):
   global g_boardModel
+  global g_blackPawnModels
   global g_whiteKingModel
   global g_blackKingModel
   global g_whiteQueenModel
   global g_blackQueenModel
+  global g_whiteBishopModels
+  global g_blackBishopModels
+  global g_whiteRookModels
+  global g_blackRookModels
 
   global g_worldSpaceLightDirection
   global g_cameraDistance
@@ -58,10 +69,38 @@ def renderFrame(width, height):
   drawObjModel(viewToClipTfm, worldToViewTfm, boardModelToWorldTransform, g_boardModel)
 
   whiteKingModelToWorldTransform = lu.make_translation(3.5, 0.46, -0.5)
-  drawObjModel(viewToClipTfm, worldToViewTfm, whiteKingModelToWorldTransform, g_whiteKingModel)
+  #drawObjModel(viewToClipTfm, worldToViewTfm, whiteKingModelToWorldTransform, g_whiteKingModel)
 
   blackKingModelToWorldTransform = lu.make_translation(-3.5, 0.46, -0.5)
   drawObjModel(viewToClipTfm, worldToViewTfm, blackKingModelToWorldTransform, g_blackKingModel)
+
+  whiteQueenModelToWorldTransform = lu.make_translation(3.5, 0.46, 0.5)
+  #drawObjModel(viewToClipTfm, worldToViewTfm, whiteQueenModelToWorldTransform, g_whiteQueenModel)
+
+  blackQueenModelToWorldTransform = lu.make_translation(-3.5, 0.46, 0.5)
+  drawObjModel(viewToClipTfm, worldToViewTfm, blackQueenModelToWorldTransform, g_blackQueenModel)
+
+  blackPawnModelToWorldTransforms = []
+  for i in range(8):
+    blackPawnModelToWorldTransforms.append(lu.make_translation(-2.5, 0.46, -3.5+1*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, blackPawnModelToWorldTransforms[i], g_blackPawnModels[i])
+
+  whiteBishopModelToWorldTransforms = []
+  blackBishopModelToWorldTransforms = []
+  whiteRookModelToWorldTransforms = []
+  blackRookModelToWorldTransforms = []
+  for i in range(-1, 2, 2):
+    whiteBishopModelToWorldTransforms.append(lu.make_translation(3.5, 0.46, 1.5*i))
+    #drawObjModel(viewToClipTfm, worldToViewTfm, whiteBishopModelToWorldTransforms[i], g_whiteBishopModels[i])
+
+    blackBishopModelToWorldTransforms.append(lu.make_translation(-3.5, 0.46, 1.5*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, blackBishopModelToWorldTransforms[i], g_blackBishopModels[i])
+
+    whiteRookModelToWorldTransforms.append(lu.make_translation(3.5, 0.46, 3.5*i))
+    #drawObjModel(viewToClipTfm, worldToViewTfm, whiteRookModelToWorldTransforms[i], g_whiteRookModels[i])
+
+    blackRookModelToWorldTransforms.append(lu.make_translation(-3.5, 0.46, 3.5*i))
+    drawObjModel(viewToClipTfm, worldToViewTfm, blackRookModelToWorldTransforms[i], g_blackRookModels[i])
 
 def drawUi():
   global g_cameraDistance
@@ -78,16 +117,35 @@ def drawUi():
 
 def initResources():
   global g_boardModel
+  global g_blackPawnModels
   global g_whiteKingModel
   global g_blackKingModel
   global g_whiteQueenModel
   global g_blackQueenModel
+  global g_whiteBishopModels
+  global g_blackBishopModels
+  global g_whiteRookModels
+  global g_blackRookModels
 
   g_boardModel = ObjModel('model/board.obj')
   g_whiteKingModel = ObjModel('model/whiteKing.obj')
   g_blackKingModel = ObjModel('model/blackKing.obj')
   g_whiteQueenModel = ObjModel('model/whiteQueen.obj')
   g_blackQueenModel = ObjModel('model/blackQueen.obj')
+
+  g_blackPawnModels = []
+  for i in range(8):
+    g_blackPawnModels.append(ObjModel('model/blackPawn.obj'))
+
+  g_whiteBishopModels = []
+  g_blackBishopModels = []
+  g_whiteRookModels = []
+  g_blackRookModels = []
+  for i in range(2):
+    g_whiteBishopModels.append(ObjModel('model/whiteBishop.obj'))
+    g_blackBishopModels.append(ObjModel('model/blackBishop.obj'))
+    g_whiteRookModels.append(ObjModel('model/whiteRook.obj'))
+    g_blackRookModels.append(ObjModel('model/blackRook.obj'))
 
   # turn backface culling back on
   glEnable(GL_CULL_FACE)
