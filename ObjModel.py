@@ -2,32 +2,22 @@ from OpenGL.GL import *
 import os
 from PIL import Image
 from ctypes import sizeof, c_float, c_void_p, c_uint, string_at
-from magic import Mat3, Mat4, buildShader, getUniformLocationDebug
+import magic
+import Util as lu
+import numpy as np
 
-#T_Eof      = 0,
-#T_MtlLib   = 'm' << 8 | 't'
-#T_UseMtl   = 'u' << 8 | 's' 
-#T_Face     = 'f' << 8 | ' '  # line starts with 'f' followed by ' '
-#T_Face2    = 'f' << 8 | '\t' # line starts with 'f' followed by '\t'
-#T_Vertex   = 'v' << 8 | ' '  # line starts with 'v' followed by ' '
-#T_Vertex2  = 'v' << 8 | '\t' # line starts with 'v' followed by '\t'
-#T_Normal   = 'v' << 8 | 'n' 
-#T_TexCoord = 'v' << 8 | 't' 
-
-
-    #def fillBuffer():
-    #    if self.bufferPos >= self.bufferEnd:
-    #        self.input.read(self.buffer, s_bufferLength);
-    #        self.bufferEnd = int(self.input->gcount());
-    #        self.bufferPos = 0;
-    #    return self.bufferEnd != 0;
 
 def flatten(*lll):
 	return [u for ll in lll for l in ll for u in l]
 
+
+
 def bindTexture(texUnit, textureId, defaultTexture):
 	glActiveTexture(GL_TEXTURE0 + texUnit);
 	glBindTexture(GL_TEXTURE_2D, textureId if textureId != -1 else defaultTexture);
+
+
+
 
 class ObjModel:
     RF_Transparent = 1
@@ -47,6 +37,8 @@ class ObjModel:
     TU_Normal = 3
     TU_Max = 4
 
+    texturesByName = {}
+    texturesById = {}
 
     def __init__(self, fileName):
         self.defaultTextureOne = glGenTextures(1);
@@ -61,9 +53,9 @@ class ObjModel:
         self.overrideDiffuseTextureWithDefault = False
         self.load(fileName)
 
-        self.defaultShader = buildShader(self.defaultVertexShader, self.defaultFragmentShader, self.getDefaultAttributeBindings())
+        self.defaultShader = lu.buildShader(self.defaultVertexShader, self.defaultFragmentShader, ObjModel.getDefaultAttributeBindings())
         glUseProgram(self.defaultShader)
-        self.setDefaultUniformBindings(self.defaultShader)
+        ObjModel.setDefaultUniformBindings(self.defaultShader)
         glUseProgram(0)
 
     def load(self, fileName):
@@ -116,7 +108,7 @@ class ObjModel:
 
         start = 0
         end = 0
-
+        self.materials = materials
         for matId, tris in materialChunks:
             material = materials[matId]
             renderFlags = 0
@@ -162,6 +154,11 @@ class ObjModel:
         self.tangentBuffer = createBindVertexAttribArrayFloat(self.tangents, self.AA_Tangent)
         self.biTangentBuffer = createBindVertexAttribArrayFloat(self.bitangents, self.AA_Bitangent)
 
+        npPos = np.array(positions)
+        self.aabbMin = npPos.min(0)
+        self.aabbMax = npPos.max(0)
+        self.centre = (self.aabbMin + self.aabbMax) * 0.5
+        
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
@@ -269,6 +266,9 @@ class ObjModel:
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
             #glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16);
             glBindTexture(GL_TEXTURE_2D, 0);
+            
+            self.texturesByName[fileName.lower()] = (im.size[0], im.size[1], texId)
+            self.texturesById[texId] = (im.size[0], im.size[1], fileName.lower())
             return texId
         except:
             print("WARNING: FAILED to load texture '%s'"%fileName);
@@ -276,7 +276,18 @@ class ObjModel:
 
         return -1;
 
-
+    def updateMaterials(self):
+        newChunks = []
+        for material, chunkOffset, chunkCount, renderFlags in self.chunks:
+            renderFlags = 0
+            if material["alpha"] != 1.0:
+                renderFlags |= self.RF_Transparent 
+            elif material["texture"]["opacity"] != -1:
+                renderFlags |= self.RF_AlphaTested
+            else:
+                renderFlags |= self.RF_Opaque
+            newChunks.append((material, chunkOffset, chunkCount, renderFlags))
+        self.chunks = newChunks
 
     def render(self, shaderProgram = None, renderFlags = None, transforms = {}):
         if not renderFlags:
@@ -293,15 +304,15 @@ class ObjModel:
 
         # define defaults (identity)
         defaultTfms = {
-            "modelToClipTransform" : Mat4(),
-            "modelToViewTransform" : Mat4(),
-            "modelToViewNormalTransform" : Mat3(),
+            "modelToClipTransform" : lu.Mat4(),
+            "modelToViewTransform" : lu.Mat4(),
+            "modelToViewNormalTransform" : lu.Mat3(),
         }
         # overwrite defaults
         defaultTfms.update(transforms)
         # upload map of transforms
         for tfmName,tfm in defaultTfms.items():
-            loc = getUniformLocationDebug(shaderProgram, tfmName)
+            loc = magic.getUniformLocationDebug(shaderProgram, tfmName)
             tfm._set_open_gl_uniform(loc);
 
         previousMaterial = None
@@ -322,9 +333,9 @@ class ObjModel:
                 #glBindBufferRange(GL_UNIFORM_BUFFER, UBS_MaterialProperties, m_materialPropertiesBuffer, (uint32_t)chunk.material->offset * matUniformSize, matUniformSize);
                 # TODO: this is very slow, it should be packed into an uniform buffer as per above!
                 for k,v in material["color"].items():
-                    glUniform3fv(getUniformLocationDebug(shaderProgram, "material_%s_color"%k), 1, v)
-                glUniform1f(getUniformLocationDebug(shaderProgram, "material_specular_exponent"), material["specularExponent"])
-                glUniform1f(getUniformLocationDebug(shaderProgram, "material_alpha"), material["alpha"])
+                    glUniform3fv(magic.getUniformLocationDebug(shaderProgram, "material_%s_color"%k), 1, v)
+                glUniform1f(magic.getUniformLocationDebug(shaderProgram, "material_specular_exponent"), material["specularExponent"])
+                glUniform1f(magic.getUniformLocationDebug(shaderProgram, "material_alpha"), material["alpha"])
     
             glDrawArrays(GL_TRIANGLES, chunkOffset, chunkCount)
 
@@ -338,26 +349,26 @@ class ObjModel:
 
     # useful to get the default bindings that the ObjModel will use when rendering, use to set up own shaders
     # for example an optimized shadow shader perhaps?
-    def getDefaultAttributeBindings(self):
+    def getDefaultAttributeBindings():
         return {
-            "positionAttribute" : self.AA_Position,
-            "normalAttribute" : self.AA_Normal,
-            "texCoordAttribute" : self.AA_TexCoord,
-            "tangentAttribute" : self.AA_Tangent,
-            "bitangentAttribute" : self.AA_Bitangent,
+            "positionAttribute" : ObjModel.AA_Position,
+            "normalAttribute" : ObjModel.AA_Normal,
+            "texCoordAttribute" : ObjModel.AA_TexCoord,
+            "tangentAttribute" : ObjModel.AA_Tangent,
+            "bitangentAttribute" : ObjModel.AA_Bitangent,
         }
 
 
 	#
 	# Helper to set the default uniforms provided by ObjModel. This only needs to be done once after creating the shader
 	# NOTE: the shader must be bound when calling this function.
-    def setDefaultUniformBindings(self, shaderProgram):
+    def setDefaultUniformBindings(shaderProgram):
         assert glGetIntegerv(GL_CURRENT_PROGRAM) == shaderProgram
 
-        glUniform1i(getUniformLocationDebug(shaderProgram, "diffuse_texture"), self.TU_Diffuse);
-        glUniform1i(getUniformLocationDebug(shaderProgram, "opacity_texture"), self.TU_Opacity);
-        glUniform1i(getUniformLocationDebug(shaderProgram, "specular_texture"), self.TU_Specular);
-        glUniform1i(getUniformLocationDebug(shaderProgram, "normal_texture"), self.TU_Normal);
+        glUniform1i(magic.getUniformLocationDebug(shaderProgram, "diffuse_texture"), ObjModel.TU_Diffuse);
+        glUniform1i(magic.getUniformLocationDebug(shaderProgram, "opacity_texture"), ObjModel.TU_Opacity);
+        glUniform1i(magic.getUniformLocationDebug(shaderProgram, "specular_texture"), ObjModel.TU_Specular);
+        glUniform1i(magic.getUniformLocationDebug(shaderProgram, "normal_texture"), ObjModel.TU_Normal);
         #glUniformBlockBinding(shaderProgram, glGetUniformBlockIndex(shaderProgram, "MaterialProperties"), UBS_MaterialProperties);
 
     defaultVertexShader = """
