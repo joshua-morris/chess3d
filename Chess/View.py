@@ -1,6 +1,8 @@
 import math
 import Util as lu
 
+import glfw
+
 from OpenGL.GL import *
 from ObjModel import ObjModel
 import magic
@@ -24,10 +26,13 @@ class View:
         self.reloadTimeout = 1.0
 
         self.models = {}
-        self.highlightOffset = [0.0, 0.0]
+        self.offsets = {}
 
-    def initModels(self):
-        pass
+
+        self.mousePos = None
+        self.coordinateSystemModel = None
+        self.numMsaaSamples = None
+        self.currentMsaaSamples = None
 
     def initResources(self):
         self.models["highlight"] = ObjModel('model/highlight.obj')
@@ -71,6 +76,9 @@ class View:
         self.shader = buildShader(self.vertexShaderSource, self.fragmentShaderSource)
 
         self.reLoadShader()
+
+        for model in self.models:
+            self.offsets[model] = [0.0, 0.0]
 
     def renderFrame(self, xOffset, width, height):
         lightRotation = lu.Mat3(lu.make_rotation_y(math.radians(self.lighting.lightYaw))) * lu.Mat3(lu.make_rotation_x(math.radians(self.lighting.lightPitch))) 
@@ -149,7 +157,7 @@ class View:
             blackRookModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 3.5*i))
             self.drawObjModel(viewToClipTfm, worldToViewTfm, blackRookModelToWorldTransforms[i], self.models["blackRookModels"][i])
 
-        highlightTransform = lu.make_translation(-3.5 + self.highlightOffset[0], BOARD_HEIGHT, 3.5-self.highlightOffset[1])
+        highlightTransform = lu.make_translation(-3.5 + self.offsets['highlight'][0], BOARD_HEIGHT, 3.5-self.offsets['highlight'][1])
         self.drawObjModel(viewToClipTfm, worldToViewTfm, highlightTransform, self.models["highlight"])
 
     def drawObjModel(self, viewToClipTfm, worldToViewTfm, modelToWorldTfm, model):
@@ -212,13 +220,10 @@ class View:
         self.lighting.lightYaw += self.lighting.lightYawSpeed * dt
         self.lighting.lightPitch += self.lighting.lightPitchSpeed * dt
 
-        self.highlightOffset[0] = (self.highlightOffset[0] + 1) % 8
-        self.highlightOffset[1] = (self.highlightOffset[1] + 2) % 8
-
         self.reloadTimeout -= dt
         if self.reloadTimeout <= 0.0:
-            self.reLoadShader();
-            g_reloadTimeout = 1.0
+            self.reLoadShader()
+            self.reloadTimeout = 1.0
 
         self.camera.camera.update(dt, keys, mouseDelta)
 
@@ -249,3 +254,33 @@ def buildShader(vertexShaderSource, fragmentShaderSource):
         ObjModel.setDefaultUniformBindings(shader)
         glUseProgram(0)
     return shader
+
+def initGlFwAndResources(title, startWidth, startHeight, view):
+    #glfw.window_hint(glfw.OPENGL_DEBUG_CONTEXT, 1)
+    glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+    glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+    glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+    glfw.window_hint(glfw.SRGB_CAPABLE, 1)
+    glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, GL_TRUE)
+
+    #glfw.window_hint(glfw.SAMPLES, g_currentMsaaSamples)
+
+
+    window = glfw.create_window(startWidth, startHeight, title, None, None)
+    if not window:
+        glfw.terminate()
+        sys.exit(1)
+
+    glfw.make_context_current(window)
+
+    impl = magic.ImGuiGlfwRenderer(window)
+
+    glDisable(GL_CULL_FACE)
+    glEnable(GL_DEPTH_TEST)
+    glDepthFunc(GL_LEQUAL)
+    #glEnable(GL_DEPTH_CLAMP)
+
+    if view.initResources:
+        view.initResources()
+
+    return window, impl
