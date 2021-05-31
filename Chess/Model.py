@@ -10,6 +10,9 @@ class Game:
     else:
       self._position = positions
 
+    # true if white's turn
+    self.turn = True
+
   def _init_positions(self):
     """Default starting positions."""
     result = dict()

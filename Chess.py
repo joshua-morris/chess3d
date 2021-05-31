@@ -52,9 +52,8 @@ def main():
         width, height = glfw.get_framebuffer_size(window)
             
         view.renderFrame(0, width, height)
-    
+        view.highlightPosition(mouseX, mouseY)
         glfw.swap_buffers(window)
-
         # Poll for and process events
         glfw.poll_events()
         impl.process_inputs()

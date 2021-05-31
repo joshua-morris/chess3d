@@ -28,11 +28,16 @@ class View:
         self.models = {}
         self.offsets = {}
 
+        self.width, self.height = None, None
+
 
         self.mousePos = None
         self.coordinateSystemModel = None
         self.numMsaaSamples = None
         self.currentMsaaSamples = None
+
+        self.worldToViewTfm = None
+        self.viewToClipTfm = None
 
     def initResources(self):
         self.models["highlight"] = ObjModel('model/highlight.obj')
@@ -77,8 +82,32 @@ class View:
 
         self.reLoadShader()
 
-        for model in self.models:
-            self.offsets[model] = [0.0, 0.0]
+        self.offsets["whiteKingModel"] = [7.0, -4]
+        self.offsets["blackKingModel"] = [0.0, -4]
+        self.offsets["whiteQueenModel"] = [7.0, -3]
+        self.offsets["blackQueenModel"] = [0.0, -3.0]
+
+        self.offsets["whitePawnModels"] = []
+        self.offsets["blackPawnModels"] = []
+        for i in range(8):
+            self.offsets["whitePawnModels"].append([6, -7+1*i])
+            self.offsets["blackPawnModels"].append([1, -7+1*i])
+
+        self.offsets["whiteBishopModels"] = []
+        self.offsets["blackBishopModels"] = []
+        self.offsets["whiteKnightModels"] = []
+        self.offsets["blackKnightModels"] = []
+        self.offsets["whiteRookModels"] = []
+        self.offsets["blackRookModels"] = []
+        for i in range(2):
+            self.offsets["whiteBishopModels"].append([7, -5+3*i])
+            self.offsets["blackBishopModels"].append([0, -5+3*i])
+            self.offsets["whiteKnightModels"].append([7, -6+5*i])
+            self.offsets["blackKnightModels"].append([0, -6+5*i])
+            self.offsets["whiteRookModels"].append([7, -7+7*i])
+            self.offsets["blackRookModels"].append([0, -7+7*i])
+
+        self.offsets["highlight"] = [0,0]
 
     def renderFrame(self, xOffset, width, height):
         lightRotation = lu.Mat3(lu.make_rotation_y(math.radians(self.lighting.lightYaw))) * lu.Mat3(lu.make_rotation_x(math.radians(self.lighting.lightPitch))) 
@@ -95,42 +124,42 @@ class View:
 
         eyePos = lu.Mat3(lu.make_rotation_y(math.radians(self.camera.cameraYaw)) * lu.make_rotation_x(-math.radians(self.camera.cameraPitch))) * [0.0, 0.0, self.camera.cameraDistance]
 
-        worldToViewTfm = magic.make_lookAt(eyePos, [0,self.camera.lookTargetHeight,0], [0, 1, 0])
-        viewToClipTfm = magic.make_perspective(45.0, width / height, 0.1, 1000.0)
+        self.worldToViewTfm = magic.make_lookAt(eyePos, [0,self.camera.lookTargetHeight,0], [0, 1, 0])
+        self.viewToClipTfm = magic.make_perspective(45.0, width / height, 0.1, 1000.0)
         
         # Bind the shader program such that we can set the uniforms (model.render sets it again)
         glUseProgram(self.shader)
 
-        lu.setUniform(self.shader, "viewSpaceLightPosition", lu.transformPoint(worldToViewTfm, lightPosition))
+        lu.setUniform(self.shader, "viewSpaceLightPosition", lu.transformPoint(self.worldToViewTfm, lightPosition))
         lu.setUniform(self.shader, "lightColourAndIntensity", self.lighting.lightColourAndIntensity)
         lu.setUniform(self.shader, "ambientLightColourAndIntensity", self.lighting.ambientLightColourAndIntensity)
 
-        lu.setUniform(self.shader, "viewToWorldRotationTransform", lu.inverse(lu.Mat3(worldToViewTfm)))
+        lu.setUniform(self.shader, "viewToWorldRotationTransform", lu.inverse(lu.Mat3(self.worldToViewTfm)))
         # transform (rotate) light direction into view space (as this is what the ObjModel shader wants)
         
         boardModelToWorldTransform = lu.Mat4()
-        self.drawObjModel(viewToClipTfm, worldToViewTfm, boardModelToWorldTransform, self.models["boardModel"])
+        self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, boardModelToWorldTransform, self.models["boardModel"])
 
-        whiteKingModelToWorldTransform = lu.make_translation(3.5, BOARD_HEIGHT, -0.5)
-        self.drawObjModel(viewToClipTfm, worldToViewTfm, whiteKingModelToWorldTransform, self.models["whiteKingModel"])
+        whiteKingModelToWorldTransform = lu.make_translation(-3.5 + self.offsets["whiteKingModel"][0], BOARD_HEIGHT, 3.5 + self.offsets["whiteKingModel"][1])
+        self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, whiteKingModelToWorldTransform, self.models["whiteKingModel"])
 
-        blackKingModelToWorldTransform = lu.make_translation(-3.5, BOARD_HEIGHT, -0.5)
-        self.drawObjModel(viewToClipTfm, worldToViewTfm, blackKingModelToWorldTransform, self.models["blackKingModel"])
+        blackKingModelToWorldTransform = lu.make_translation(-3.5 + self.offsets["blackKingModel"][0], BOARD_HEIGHT, 3.5 + self.offsets["blackKingModel"][1])
+        self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, blackKingModelToWorldTransform, self.models["blackKingModel"])
 
-        whiteQueenModelToWorldTransform = lu.make_translation(3.5, BOARD_HEIGHT, 0.5)
-        self.drawObjModel(viewToClipTfm, worldToViewTfm, whiteQueenModelToWorldTransform, self.models["whiteQueenModel"])
+        whiteQueenModelToWorldTransform = lu.make_translation(-3.5 + self.offsets["whiteQueenModel"][0], BOARD_HEIGHT, 3.5 + self.offsets["whiteQueenModel"][1])
+        self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, whiteQueenModelToWorldTransform, self.models["whiteQueenModel"])
 
-        blackQueenModelToWorldTransform = lu.make_translation(-3.5, BOARD_HEIGHT, 0.5)
-        self.drawObjModel(viewToClipTfm, worldToViewTfm, blackQueenModelToWorldTransform, self.models["blackQueenModel"])
+        blackQueenModelToWorldTransform = lu.make_translation(-3.5 + self.offsets["blackQueenModel"][0], BOARD_HEIGHT, 3.5 + self.offsets["blackQueenModel"][1])
+        self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, blackQueenModelToWorldTransform, self.models["blackQueenModel"])
 
         whitePawnModelToWorldTransforms = []
         blackPawnModelToWorldTransforms = []
         for i in range(8):
-            whitePawnModelToWorldTransforms.append(lu.make_translation(2.5, BOARD_HEIGHT, -3.5+1*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, whitePawnModelToWorldTransforms[i], self.models["whitePawnModels"][i])
+            whitePawnModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["whitePawnModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["whitePawnModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, whitePawnModelToWorldTransforms[i], self.models["whitePawnModels"][i])
 
-            blackPawnModelToWorldTransforms.append(lu.make_translation(-2.5, BOARD_HEIGHT, -3.5+1*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, blackPawnModelToWorldTransforms[i], self.models["blackPawnModels"][i])
+            blackPawnModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["blackPawnModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["blackPawnModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, blackPawnModelToWorldTransforms[i], self.models["blackPawnModels"][i])
 
         whiteBishopModelToWorldTransforms = []
         blackBishopModelToWorldTransforms = []
@@ -138,27 +167,29 @@ class View:
         blackKnightModelToWorldTransforms = []
         whiteRookModelToWorldTransforms = []
         blackRookModelToWorldTransforms = []
-        for i in range(-1, 2, 2):
-            whiteBishopModelToWorldTransforms.append(lu.make_translation(3.5, BOARD_HEIGHT, 1.5*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, whiteBishopModelToWorldTransforms[i], self.models["whiteBishopModels"][i])
+        for i in range(2):
+            whiteBishopModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["whiteBishopModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["whiteBishopModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, whiteBishopModelToWorldTransforms[i], self.models["whiteBishopModels"][i])
 
-            blackBishopModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 1.5*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, blackBishopModelToWorldTransforms[i], self.models["blackBishopModels"][i])
+            blackBishopModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["blackBishopModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["blackBishopModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, blackBishopModelToWorldTransforms[i], self.models["blackBishopModels"][i])
 
-            whiteKnightModelToWorldTransforms.append(lu.make_translation(3.5, BOARD_HEIGHT, 2.5*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, whiteKnightModelToWorldTransforms[i], self.models["whiteKnightModels"][i])
+            whiteKnightModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["whiteKnightModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["whiteKnightModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, whiteKnightModelToWorldTransforms[i], self.models["whiteKnightModels"][i])
 
-            blackKnightModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 2.5*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, blackKnightModelToWorldTransforms[i], self.models["blackKnightModels"][i])
+            blackKnightModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["blackKnightModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["blackKnightModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, blackKnightModelToWorldTransforms[i], self.models["blackKnightModels"][i])
 
-            whiteRookModelToWorldTransforms.append(lu.make_translation(3.5, BOARD_HEIGHT, 3.5*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, whiteRookModelToWorldTransforms[i], self.models["whiteRookModels"][i])
+            whiteRookModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["whiteRookModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["whiteRookModels"][i][1] ))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, whiteRookModelToWorldTransforms[i], self.models["whiteRookModels"][i])
 
-            blackRookModelToWorldTransforms.append(lu.make_translation(-3.5, BOARD_HEIGHT, 3.5*i))
-            self.drawObjModel(viewToClipTfm, worldToViewTfm, blackRookModelToWorldTransforms[i], self.models["blackRookModels"][i])
+            blackRookModelToWorldTransforms.append(lu.make_translation(-3.5 + self.offsets["blackRookModels"][i][0], BOARD_HEIGHT, 3.5 + self.offsets["blackRookModels"][i][1]))
+            self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, blackRookModelToWorldTransforms[i], self.models["blackRookModels"][i])
 
         highlightTransform = lu.make_translation(-3.5 + self.offsets['highlight'][0], BOARD_HEIGHT, 3.5-self.offsets['highlight'][1])
-        self.drawObjModel(viewToClipTfm, worldToViewTfm, highlightTransform, self.models["highlight"])
+        self.drawObjModel(self.viewToClipTfm, self.worldToViewTfm, highlightTransform, self.models["highlight"])
+
+        self.width, self.height = width, height
 
     def drawObjModel(self, viewToClipTfm, worldToViewTfm, modelToWorldTfm, model):
         """Render a model in the world."""
@@ -227,6 +258,20 @@ class View:
 
         self.camera.camera.update(dt, keys, mouseDelta)
 
+    def highlightPosition(self, x, y):
+        x /= self.width
+        y /= self.height
+        x -= 0.30625
+        y -= 0.1725
+
+        dX = 0.695 - 0.30625
+        dY = 0.81125 - 0.1725
+
+        x,y = math.floor(8*x/dX), math.floor(8*y/dY)
+        
+        if 0 <= x and x <= 7 and 0 <= y and y <= 7:
+            self.offsets['highlight'] = [y, x]
+
 class Camera:
     def __init__(self):
         self.camera = lu.OrbitCamera([0,0,0], 10.0, -25.0, -35.0)
@@ -234,7 +279,7 @@ class Camera:
         self.worldSpaceLightDirection = [-1, -1, -1]
         self.cameraDistance = 15.0
         self.cameraYaw = 270.0 #+ 180.0
-        self.cameraPitch = 60.0
+        self.cameraPitch = 75.0
         self.lookTargetHeight = -1.0
 
 class Lighting:
