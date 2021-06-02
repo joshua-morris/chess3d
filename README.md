@@ -11,7 +11,7 @@ Create a pipenv sandbox and install dependencies using
 pipenv install
 ```
 
-It is also required to export OBJ files from Blender using the given .blend files (objects were ommitted due to large file sizes).
+It is also required to export OBJ files from Blender using the given .blend files (objects were omitted due to large file sizes).
 
 ## Usage
 Once the virtual environement and objects are available run the game with
