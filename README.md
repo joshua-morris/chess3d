@@ -1,6 +1,5 @@
 # 3D Chess
 A 3D chess game in OpenGL created for the purposes of assessment for a computer graphics course.
-Wavefront OBJ files aren't available in the repository and must be exported from the Blender source.
 
 ![](images/board.png)
 
@@ -10,8 +9,6 @@ Create a pipenv sandbox and install dependencies using
 ```
 pipenv install
 ```
-
-It is also required to export OBJ files from Blender using the given .blend files (objects were omitted due to large file sizes).
 
 ## Usage
 Once the virtual environement and objects are available run the game with
