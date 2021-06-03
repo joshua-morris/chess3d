@@ -12,13 +12,49 @@ class Game:
 
     # true if white's turn
     self.turn = True
+    self.playing = True
+    self.focused = None
+
+  def is_playing(self):
+    return self.playing
+
+  def get_focused(self):
+    return self.focused
+
+  def set_focused(self, position):
+    if self._positions.get(position) is not None:
+      self.focused = position
+
+  def unfocus(self):
+    self.focused = None
 
   def _init_positions(self):
     """Default starting positions."""
-    result = dict()
+    result = []
     for file in range(8):
-      result[1, file] = Pawn(Position(1, file), Colour.WHITE, False)
-      result[6, file] = Pawn(Position(6, file), Colour.BLACK, False)
+      result.append(Pawn(Position(1, file), Colour.WHITE, False))
+      result.append(Pawn(Position(6, file), Colour.BLACK, False))
+
+    result.append(Rook(Position(0, 0), Colour.WHITE))
+    result.append(Rook(Position(7, 0), Colour.WHITE))
+    result.append(Rook(Position(0, 7), Colour.BLACK))
+    result.append(Rook(Position(7, 7), Colour.BLACK))
+
+    result.append(Knight(Position(1, 0), Colour.WHITE))
+    result.append(Knight(Position(6, 0), Colour.WHITE))
+    result.append(Knight(Position(1, 7), Colour.BLACK))
+    result.append(Knight(Position(6, 7), Colour.BLACK))
+
+    result.append(Bishop(Position(2, 0), Colour.WHITE))
+    result.append(Bishop(Position(5, 0), Colour.WHITE))
+    result.append(Bishop(Position(2, 7), Colour.BLACK))
+    result.append(Bishop(Position(5, 7), Colour.BLACK))
+
+    result.append(Queen(Position(3, 0), Colour.WHITE))
+    result.append(Queen(Position(3, 7), Colour.BLACK))
+
+    result.append(King(Position(4, 0), Colour.WHITE))
+    result.append(King(Position(4, 7), Colour.BLACK))
 
     return result
 
@@ -67,6 +103,21 @@ class Pawn(Piece):
     # TODO
     self._position = position 
     return True
+
+class Rook(Piece):
+  pass
+
+class Knight(Piece):
+  pass
+
+class Bishop(Piece):
+  pass
+
+class Queen(Piece):
+  pass
+
+class King(Piece):
+  pass
 
 class Colour(Enum):
   WHITE = 0

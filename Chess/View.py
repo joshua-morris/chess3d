@@ -7,6 +7,8 @@ from OpenGL.GL import *
 from ObjModel import ObjModel
 import magic
 
+import sys
+
 WIDTH, HEIGHT = 1280, 800
 WINDOW_TITLE = 'Chess'
 # this is just a constant that was found through trial and error
@@ -258,7 +260,7 @@ class View:
 
         self.camera.camera.update(dt, keys, mouseDelta)
 
-    def highlightPosition(self, x, y):
+    def getPosition(self, x, y):
         x /= self.width
         y /= self.height
         x -= 0.30625
@@ -270,7 +272,12 @@ class View:
         x,y = math.floor(8*x/dX), math.floor(8*y/dY)
         
         if 0 <= x and x <= 7 and 0 <= y and y <= 7:
-            self.offsets['highlight'] = [y, x]
+            return (x, y)
+
+    def highlightPosition(self, x, y):
+        position = self.getPosition(x, y)
+        if position is not None:
+            self.offsets['highlight'] = [position[1], position[0]]
 
 class Camera:
     def __init__(self):
@@ -278,8 +285,8 @@ class Camera:
         self.yFovDeg = 45.0
         self.worldSpaceLightDirection = [-1, -1, -1]
         self.cameraDistance = 15.0
-        self.cameraYaw = 270.0 #+ 180.0
-        self.cameraPitch = 75.0
+        self.cameraYaw = 270.0 #+ 180
+        self.cameraPitch = 60.0
         self.lookTargetHeight = -1.0
 
 class Lighting:

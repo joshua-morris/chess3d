@@ -18,6 +18,9 @@ def vec3(x, y = None, z = None):
         return np.array([x,y,y], dtype=np.float32)
     return np.array([x, y, z], dtype=np.float32)
 
+def vec4(x, y , z, w):
+    return np.array([x, y, z, w], dtype=np.float32)
+
 
 # This is a helper class to provide the ability to use * for matrix/matrix and matrix/vector multiplication.
 # It also helps out uploading constants and a few other operations as python does not support overloading functions.
