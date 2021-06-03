@@ -4,9 +4,21 @@ Wavefront OBJ files aren't available in the repository and must be exported from
 
 ![](images/board.png)
 
-## Usage
-
 ## Requirements
+
+Create a pipenv sandbox and install dependencies using
+```
+pipenv install
+```
+
+It is also required to export OBJ files from Blender using the given .blend files (objects were omitted due to large file sizes).
+
+## Usage
+Once the virtual environement and objects are available run the game with
+```
+pipenv run Chess.py
+```
+in the outmost directory.
 
 ## Game Control
 |Key|Action|
