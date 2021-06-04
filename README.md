@@ -7,13 +7,14 @@ A 3D chess game in OpenGL created for the purposes of assessment for a computer 
 
 Create a pipenv sandbox and install dependencies using
 ```
+pipenv shell
 pipenv install
 ```
 
 ## Usage
-Once the virtual environement and objects are available run the game with
+Once the virtual environment run the game with
 ```
-pipenv run Chess.py
+python Chess.py
 ```
 in the outmost directory.
 
