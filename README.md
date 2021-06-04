@@ -1,7 +1,7 @@
 # 3D Chess
 A 3D chess game in OpenGL created for the purposes of assessment for a computer graphics course.
 
-![](images/board.png)
+![](images/chess.gif)
 
 ## Requirements
 
@@ -24,4 +24,4 @@ in the outmost directory.
 |`A`|Move cursor left|
 |`S`|Move cursor backward|
 |`D`|Move cursor right|
-|`Space`|Select piece<br>Move piece<br>Cancel move|
+|`Space`|Select piece<br>Move piece|

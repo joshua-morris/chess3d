@@ -1,5 +1,6 @@
 import math
 import Util as lu
+from time import sleep
 
 import glfw
 
@@ -31,7 +32,6 @@ class View:
         self.offsets = {}
 
         self.width, self.height = None, None
-
 
         self.mousePos = None
         self.coordinateSystemModel = None
@@ -110,6 +110,10 @@ class View:
             self.offsets["blackRookModels"].append([0, -7+7*i])
 
         self.offsets["highlight"] = [0,0]
+
+    def rotate(self, angle):
+        self.camera.cameraYaw += angle
+        self.camera.cameraYaw = self.camera.cameraYaw % 360
 
     def renderFrame(self, xOffset, width, height):
         lightRotation = lu.Mat3(lu.make_rotation_y(math.radians(self.lighting.lightYaw))) * lu.Mat3(lu.make_rotation_x(math.radians(self.lighting.lightPitch))) 
@@ -286,7 +290,7 @@ class Camera:
         self.worldSpaceLightDirection = [-1, -1, -1]
         self.cameraDistance = 15.0
         self.cameraYaw = 270.0 #+ 180
-        self.cameraPitch = 60.0
+        self.cameraPitch = 45.0
         self.lookTargetHeight = -1.0
 
 class Lighting:
