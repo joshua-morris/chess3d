@@ -5,10 +5,13 @@ A 3D chess game in OpenGL created for the purposes of assessment for a computer 
 
 ## Requirements
 
-Create a pipenv sandbox and install dependencies using
+Create a venv
 ```
-pipenv shell
-pipenv install
+python3 -m venv .venv
+```
+and source it then install dependencies with
+```
+pip install -e .
 ```
 
 ## Usage
